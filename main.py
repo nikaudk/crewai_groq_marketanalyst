@@ -1,64 +1,67 @@
-import os
-from crewai import Crew
-from agents import CustomAgents
-from tasks import CustomTasks
-from google.colab import userdata
-
 #### Run in colab cells
 # import os
 # from google.colab import userdata
 # Set up environment variables
 #os.environ["GROQ_API_KEY"] = userdata.get('GROQ_API_KEY') #userdata.get('GROQ_API')
 
-class DnDAdventureCrew:
-    def __init__(self, campaign_setting, campaign_theme, characters):
-        self.campaign_setting = campaign_setting
-        self.campaign_theme = campaign_theme
-        self.characters = characters
-        
-        self.agents = CustomAgents()
-        self.tasks = CustomTasks()
+import os
+from crewai import Crew
+from textwrap import dedent
 
-    def run(self):
-        agents = {
-            "leadwriter": self.agents.create_agent("Lead Dnd Writer"),
-            "characterspecialist": self.agents.create_agent("Character Specialist"),
-            "npcspecialist": self.agents.create_agent("NPC Specialist"),
-            "encounterdesigner": self.agents.create_agent("Encounter Designer"),
-            "worldbuilder": self.agents.create_agent("World Builder"),
-            "mainquestdesigner": self.agents.create_agent("Main quest Designer"),
-            "sidequestdesigner": self.agents.create_agent("Sidequest Designer")
-        }
+from agents import StockAnalysisAgents
+from tasks import StockAnalysisTasks
 
-        tasks = {
-            "world_building": self.tasks.create_task(agents["world_builder"], self.campaign_setting, self.campaign_theme, self.characters, "world_building"),
-            "characterintegration": self.tasks.create_task(agents["characterspecialist"], self.campaign_setting, self.campaign_theme, self.characters,"characterintegration"),
-            "encounterdesigning": self.tasks.create_task(agents["encounterdesigner"], self.campaign_setting, self.campaign_theme, self.characters, "encounterdesigning"),
-            "npcdevelopment": self.tasks.create_task(agents["npcspecialist"], self.campaign_setting, self.campaign_theme, self.characters, "npcdevelopment"),
-            "side_quest_design": self.tasks.create_task(agents["sidequestdesigner"], self.campaign_setting, self.campaign_theme, self.characters, "side_quest_design"),
-            "main_quest_design": self.tasks.create_task(agents["mainquestdesigner"], self.campaign_setting, self.campaign_theme, self.characters, "main_quest_design"),
-            "campaignwriting": self.tasks.create_task(agents["leadwriter"], self.campaign_setting, self.campaign_theme, self.characters, "campaignwriting")
-        }
+from google.colab import userdata
 
-        crew = Crew(
-            agents=list(agents.values()),
-            tasks=list(tasks.values()),
-            verbose=False
-        )
+from dotenv import load_dotenv
+load_dotenv()
 
-        return crew.kickoff()
+class FinancialCrew:
+  def __init__(self, company):
+    self.company = company
+
+  def run(self):
+    agents = StockAnalysisAgents()
+    tasks = StockAnalysisTasks()
+
+    research_analyst_agent = agents.research_analyst()
+    financial_analyst_agent = agents.financial_analyst()
+    investment_advisor_agent = agents.investment_advisor()
+
+    research_task = tasks.research(research_analyst_agent, self.company)
+    financial_task = tasks.financial_analysis(financial_analyst_agent)
+    filings_task = tasks.filings_analysis(financial_analyst_agent)
+    recommend_task = tasks.recommend(investment_advisor_agent)
+
+    crew = Crew(
+      agents=[
+        research_analyst_agent,
+        financial_analyst_agent,
+        investment_advisor_agent
+      ],
+      tasks=[
+        research_task,
+        financial_task,
+        filings_task,
+        recommend_task
+      ],
+      verbose=True
+    )
+
+    result = crew.kickoff()
+    return result
 
 if __name__ == "__main__":
-    print("Welcome to the Business Automation Crew Setup")
-    print("------------------------------------------------")
-    campaign_setting = input("Provide a brief overview of the campaign setting, including the world, its history, and any relevant factions or organizations.").strip()
-    campaign_theme = input("Specify the desired tone and themes for the adventure (e.g., light-hearted, dark and gritty, humorous, etc.)").strip()
-    characters = input("hare the players' character concepts, backstories, and personalities to help the crew tailor the adventure to their strengths and weaknesses.").strip()
-    
-    automation_crew = DnDAdventureCrew(campaign_setting, campaign_theme, characters)
-    dnd_adventur = automation_crew.run()
-
-    print("\n\n########################")
-    print("## Here are the results of your business automation project:")
-    print("########################\n")
-    print(dnd_adventur)
+  print("## Welcome to Financial Analysis Crew")
+  print('-------------------------------')
+  company = input(
+    dedent("""
+      What is the company you want to analyze?
+    """))
+  
+  financial_crew = FinancialCrew(company)
+  result = financial_crew.run()
+  print("\n\n########################")
+  print("## Here is the Report")
+  print("########################\n")
+  print(result)
